@@ -1,0 +1,62 @@
+git_status() {
+    # Verificar si estamos dentro de un repositorio Git
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        return # No es un repositorio Git, salimos.
+    fi
+
+    # Obtener el nombre de la rama actual y el estado en una sola llamada.
+    # Optamos por git rev-parse --abbrev-ref HEAD para la rama.
+    local branch_name=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    local status_output=$(git status --porcelain -b 2>/dev/null)
+
+    local indicators=""
+    local upstream_info=$(echo "$status_output" | head -n 1) # La primera línea contiene la info del upstream
+
+    # --- INDICADORES DE UPSTREAM (ahead/behind) ---
+    # Usamos expresiones regulares nativas de Bash para evitar 'grep'.
+    # El patrón '.*' permite que haya cualquier cosa antes o después del texto.
+    if [[ "$upstream_info" =~ \[ahead\ [0-9]+\] ]]; then
+        indicators+="↑"
+    fi
+    if [[ "$upstream_info" =~ \[behind\ [0-9]+\] ]]; then
+        indicators+="↓"
+    fi
+
+    # --- OTROS INDICADORES DE ESTADO (sin 'grep') ---
+    # Para estos, iteramos línea por línea o usamos patrones más generales.
+    # La salida de --porcelain es muy predecible.
+
+    # 1. Archivos eliminados (D en cualquier columna: " D" o "D ")
+    # Buscamos una línea que contenga " D" o "D "
+    if [[ "$status_output" =~ D\  || "$status_output" =~ \ D ]]; then
+        indicators+="x"
+    fi
+
+    # 2. Archivos no traqueados (Untracked: ?? al inicio de línea)
+    # Buscamos una línea que comience con "??\n" para asegurar que es un inicio de línea
+    # O directamente "?? ". El \n asegura que no es parte de otra cosa.
+    # El patrón `(^|$)` es para inicio/fin de línea, o `\n` para saltos.
+    if [[ "$status_output" =~ \n\?\? || "$status_output" =~ ^\?\? ]]; then
+        indicators+="?"
+    fi
+
+    # 3. Archivos modificados no staged ( M al inicio de línea)
+    if [[ "$status_output" =~ \n\ M || "$status_output" =~ ^\ M ]]; then
+        indicators+="!"
+    fi
+
+    # 4. Cambios staged (M, A, R, C al inicio de línea)
+    # Buscamos líneas que comiencen con M, A, R o C seguidas de un espacio.
+    # Usamos '\n' para detectar inicios de línea dentro de la cadena o '^' para el inicio total.
+    if [[ "$status_output" =~ \n[MARC]\  || "$status_output" =~ ^[MARC]\  ]]; then
+        indicators+="+"
+    fi
+    
+    # Formatear la salida final
+    local full_git_info=" ${branch_name}" # Añadimos el icono directamente aquí
+
+    if [ -n "$indicators" ]; then
+        full_git_info+=" ${indicators}"
+    fi
+    echo "${full_git_info}"
+}
