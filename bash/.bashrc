@@ -1,5 +1,3 @@
-# .bashrc
-
 # Source global definitions
 if [ -f /etc/bashrc ]; then
     . /etc/bashrc
@@ -33,64 +31,57 @@ alias ll='lsd -l'
 alias la='lsd -a'
 alias lla='lsd -la'
 
-# Prompt
-
 git_status() {
-	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-		# Git branch
-		local branch_name=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ \1/')
+    # Check if cwd is a git repository
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        return
+    fi
 
-		# Git status
-		local status_output=$(git status --porcelain -b 2>/dev/null)
+	# Get branch name and status
+    local branch_name=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    local status_output=$(git status --porcelain -b 2>/dev/null)
 
-		# Upstream info
-		local upstream_info=$(echo "$status_output" | head -n 1 | grep "^##")
-		
-		local indicators=""
+    local indicators=""
+    local upstream_info=$(echo "$status_output" | head -n 1)
 
-		# If the local branch is ahead (the remote branch is behind)
-		if echo "$upstream_info" | grep -q "\[ahead [0-9]\+\]"; then
-			indicators+="↑"
-		fi
+	# If the local branch is ahead
+    if [[ "$upstream_info" =~ \[ahead\ [0-9]+\] ]]; then
+        indicators+="↑"
+    fi
 
-		# If the remote branch is ahead (the local branch is behind)
-		if echo "$upstream_info" | grep -q "\[behind [0-9]\+\]"; then
-			indicators+="↓"
-		fi		
+	# If the remote branch is ahead
+    if [[ "$upstream_info" =~ \[behind\ [0-9]+\] ]]; then
+        indicators+="↓"
+    fi
 
-		# Deleted files #
-		if echo "$status_output" | grep -q "D " || echo "$status_output" | grep -q " D"; then
-			indicators+="x"
-		fi
+	# Removed files
+    if [[ "$status_output" =~ D\  || "$status_output" =~ \ D ]]; then
+        indicators+="✗"
+    fi
 
-		# Unstaged changes #
-		# Untracked files
-		if echo "$status_output" | grep -q "^??"; then
-			indicators+="?"
-		fi
+	# Untracked files
+    if [[ "$status_output" =~ \n\?\? || "$status_output" =~ ^\?\? ]]; then
+        indicators+="?"
+    fi
 
-		# Modified files
-		if echo "$status_output" | grep -q "^ M"; then
-			indicators+="!"
-		fi
+	# Modified files (unstaged)
+    if [[ "$status_output" =~ \n\ M || "$status_output" =~ ^\ M ]]; then
+        indicators+="!"
+    fi
 
+	# Staged changes
+    if [[ "$status_output" =~ \n[MARC]\  || "$status_output" =~ ^[MARC]\  ]]; then
+        indicators+="+"
+    fi
+    
+    local full_git_info=" ${branch_name}"
+    # local full_git_info=" ${branch_name}"
+	
 
-		# Staged changes #
-		# M = Modified, A = Added, D = Deleted (staged), R = Renamed, C = Copied
-		if echo "$status_output" | grep -q "^M " || \
-			echo "$status_output" | grep -q "^A " || \
-			echo "$status_output" | grep -q "^R " || \
-			echo "$status_output" | grep -q "^C "; then
-		indicators+="+"
-		fi
-
-		
-		local full_git_info="$branch_name"
-		if [ -n "$indicators" ]; then
-			full_git_info+=" ${indicators}"
-		fi
-		echo "${full_git_info}"
-	fi
+    if [ -n "$indicators" ]; then
+        full_git_info+=" ${indicators}"
+    fi
+    echo "${full_git_info}"
 }
 
 prompt_sign() {
@@ -101,6 +92,7 @@ prompt_sign() {
 	fi
 }
 
+# Prompt
 PROMPT_COMMAND='echo'
 PS1='\[\e[1;38;2;187;154;247m\]\w\[\e[0m\]  '						# cwd
 PS1+='\[\e[38;2;122;162;247m\]$(git_status)\[\e[0m\]\n'			# git status
