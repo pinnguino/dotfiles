@@ -1,0 +1,4 @@
+To make the colors work properly, you'll need to install the Pansies module.
+This module enables advanced color, text formatting and Unicode characters in PowerShell.
+To install run the following command in PowerShell:
+Install-Module -Name Pansies -AllowClobber
