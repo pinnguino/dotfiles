@@ -97,7 +97,7 @@ prompt_sign() {
 	if [[ "$(whoami)" == "root" ]]; then
 		echo "󰈸 "
 	else
-		echo " "
+		echo "  "
 	fi
 }
 
