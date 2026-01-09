@@ -37,59 +37,28 @@ alias lla='lsd -la'
 
 git_status() {
 	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-		# Git branch
-		local branch_name=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ \1/')
-
-		# Git status
+		# Obtener nombre de la rama
+		local branch_name=$(git branch --show-current 2> /dev/null)
 		local status_output=$(git status --porcelain -b 2>/dev/null)
-
-		# Upstream info
-		local upstream_info=$(echo "$status_output" | head -n 1 | grep "^##")
-		
+		local upstream_info=$(echo "$status_output" | head -n 1)
 		local indicators=""
 
-		# If the local branch is ahead (the remote branch is behind)
-		if echo "$upstream_info" | grep -q "\[ahead [0-9]\+\]"; then
-			indicators+="↑"
-		fi
+		# Ahead / Behind
+		[[ "$upstream_info" =~ "ahead" ]] && indicators+="↑"
+		[[ "$upstream_info" =~ "behind" ]] && indicators+="↓"
 
-		# If the remote branch is ahead (the local branch is behind)
-		if echo "$upstream_info" | grep -q "\[behind [0-9]\+\]"; then
-			indicators+="↓"
-		fi		
+		# Deleted, Untracked, Modified, Staged
+		echo "$status_output" | grep -qE "D | D" && indicators+="x"
+		echo "$status_output" | grep -q "^??" && indicators+="?"
+		echo "$status_output" | grep -q "^ M" && indicators+="!"
+		echo "$status_output" | grep -qE "^(M|A|R|C) " && indicators+="+"
 
-		# Deleted files #
-		if echo "$status_output" | grep -q "D " || echo "$status_output" | grep -q " D"; then
-			indicators+="x"
-		fi
-
-		# Unstaged changes #
-		# Untracked files
-		if echo "$status_output" | grep -q "^??"; then
-			indicators+="?"
-		fi
-
-		# Modified files
-		if echo "$status_output" | grep -q "^ M"; then
-			indicators+="!"
-		fi
-
-
-		# Staged changes #
-		# M = Modified, A = Added, D = Deleted (staged), R = Renamed, C = Copied
-		if echo "$status_output" | grep -q "^M " || \
-			echo "$status_output" | grep -q "^A " || \
-			echo "$status_output" | grep -q "^R " || \
-			echo "$status_output" | grep -q "^C "; then
-		indicators+="+"
-		fi
-
-		
-		local full_git_info="$branch_name"
+		# Construir salida: Icono + Nombre + Indicadores
 		if [ -n "$indicators" ]; then
-			full_git_info+=" ${indicators}"
+			echo " $branch_name $indicators"
+		else
+			echo " $branch_name"
 		fi
-		echo "${full_git_info}"
 	fi
 }
 
@@ -101,11 +70,24 @@ prompt_sign() {
 	fi
 }
 
+COLOR_DIR='\[\e[1;38;2;187;154;247m\]'
+COLOR_GIT='\[\e[38;2;122;162;247m\]'
+COLOR_USER='\[\e[38;2;192;202;245m\]'
+COLOR_SIGN='\[\e[38;2;158;206;106m\]'
+RESET='\[\e[0m\]'
+
 PROMPT_COMMAND='echo'
-PS1='\[\e[1;38;2;187;154;247m\]\w\[\e[0m\]  '						# cwd
-PS1+='\[\e[38;2;122;162;247m\]$(git_status)\[\e[0m\]\n'			# git status
-PS1+='\[\e[38;2;192;202;245m\]\u\[\e[0m\] '						# username
-PS1+='\[\e[38;2;158;206;106m\]$(prompt_sign)\[\e[0m\]'			# prompt sign
+PS1="${COLOR_DIR}\w${RESET}  ${COLOR_GIT}\$(git_status)${RESET}\n"
+PS1+="${COLOR_USER}\u${RESET} ${COLOR_SIGN}\$(prompt_sign)${RESET}"
+if [ -z "$SSH_AUTH_SOCK" ]; then
+	eval "$(ssh-agent -s)" > /dev/null
+	# Añade la llave específica que creamos para GitHub
+	ssh-add ~/.ssh/github 2>/dev/null
+fi
 
 # Autorun
 # fastfetch
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+export PATH=$PATH:$HOME/go/bin
