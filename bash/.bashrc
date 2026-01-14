@@ -24,20 +24,32 @@ if [ -d ~/.bashrc.d ]; then
 fi
 unset rc
 
-# Aliases
+## Aliases ##
 alias v='nvim'
 alias c='clear'
+
+# Better ls
 alias l='lsd'
 alias ls='lsd'
 alias ll='lsd -l'
 alias la='lsd -a'
 alias lla='lsd -la'
 
-# Prompt
+# Better cat
+alias cat='batcat'
 
+# Git
+alias g='git'
+alias gst='git status'
+alias gbr='git branch'
+alias gci='git commit'
+alias gad='git add'
+alias glg='git log --pretty=format:"%C(magenta)%h%Creset -%C(red)%d%Creset %s %C(dim green)(%cr) [%an]" --abbrev-commit'
+
+## Prompt ##
 git_status() {
 	if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-		# Obtener nombre de la rama
+		# Get branch name
 		local branch_name=$(git branch --show-current 2> /dev/null)
 		local status_output=$(git status --porcelain -b 2>/dev/null)
 		local upstream_info=$(echo "$status_output" | head -n 1)
@@ -53,7 +65,6 @@ git_status() {
 		echo "$status_output" | grep -q "^ M" && indicators+="!"
 		echo "$status_output" | grep -qE "^(M|A|R|C) " && indicators+="+"
 
-		# Construir salida: Icono + Nombre + Indicadores
 		if [ -n "$indicators" ]; then
 			echo " $branch_name $indicators"
 		else
@@ -79,15 +90,13 @@ RESET='\[\e[0m\]'
 PROMPT_COMMAND='echo'
 PS1="${COLOR_DIR}\w${RESET}  ${COLOR_GIT}\$(git_status)${RESET}\n"
 PS1+="${COLOR_USER}\u${RESET} ${COLOR_SIGN}\$(prompt_sign)${RESET}"
-if [ -z "$SSH_AUTH_SOCK" ]; then
-	eval "$(ssh-agent -s)" > /dev/null
-	# Añade la llave específica que creamos para GitHub
-	ssh-add ~/.ssh/github 2>/dev/null
-fi
+
 
 # Autorun
 # fastfetch
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+# eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
-export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-export PATH=$PATH:$HOME/go/bin
+## PATH ##
+# export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+# export PATH=$PATH:$HOME/go/bin
+export PATH="$PATH:$HOME/.local/share/nvim/mason/bin"
