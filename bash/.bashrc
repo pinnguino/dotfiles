@@ -43,6 +43,7 @@ alias g='git'
 alias gst='git status'
 alias gbr='git branch'
 alias gci='git commit'
+alias gdf='git diff'
 alias gad='git add'
 alias glg='git log --pretty=format:"%C(magenta)%h%Creset -%C(red)%d%Creset %s %C(dim green)(%cr) [%an]" --abbrev-commit'
 

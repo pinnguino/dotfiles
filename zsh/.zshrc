@@ -26,6 +26,7 @@ alias g='git'
 alias gst='git status'
 alias gbr='git branch'
 alias gci='git commit'
+alias gdf='git diff'
 alias gad='git add'
 alias glg='git log --pretty=format:"%C(magenta)%h%Creset -%C(red)%d%Creset %s %C(dim green)(%cr) [%an]" --abbrev-commit'
 
@@ -84,6 +85,7 @@ RPROMPT='%F{#7AA2F7}%K{#7AA2F7}%F{#1A1B26}%B zsh %b%f%k'
 
 ## PATH
 export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
 # export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
 # export PATH="$PATH:$HOME/go/bin"
 
